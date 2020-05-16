@@ -7,14 +7,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Random;
 
 public class G35HW2 {
-    //Setting variables
-    double distance = 0;
-    long time = 0;
 
 
 public static void main(String[] args) throws IOException {
@@ -25,9 +20,10 @@ public static void main(String[] args) throws IOException {
         throw new IllegalArgumentException("Expecting the file name on the command line");
     }
 
-
+    //Setting variables
+    long time;
     String filename = args[0];
-    ArrayList<Vector> inputPoints = new ArrayList<>();
+    ArrayList<Vector> inputPoints;
     inputPoints = readVectorsSeq(filename);
 
     //SPARK SETUP
@@ -36,20 +32,24 @@ public static void main(String[] args) throws IOException {
     sc.setLogLevel("WARN");
 
     //Runs the exactMPS method with the inputPoints as input
-    G35HW2.exactMPS(inputPoints);
+    //Calculating the time for the method, so we can use this variable in kCenterMPD
+    long timeStart = System.currentTimeMillis();
+    exactMPS(inputPoints);
+    long endTime = System.currentTimeMillis();
+
+    time = endTime - timeStart;
 
     // Gets number of partitions from the input
     int K = Integer.parseInt(args[1]);
 
     //Runs the twoApproxMPD method with the following inputs
-    G35HW2.twoApproxMPD(inputPoints, K);
+    twoApproxMPD(inputPoints, K);
 
-    //Runs the kCenterMPD method with the following inputs
-    G35HW2.kCenterMPD(inputPoints, K);
-
+    //Runs the kCenterMPD method with the following inputs,
+    //added one more parameter to get the time from exactMPD
+    kCenterMPD(inputPoints, K, time);
 
 }
-
 
 // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 // Auxiliary methods
@@ -61,7 +61,6 @@ public static void main(String[] args) throws IOException {
         double[] data = new double[tokens.length];
         for (int i=0; i<tokens.length; i++) {
             data[i] = Double.parseDouble(tokens[i]);
-            //System.out.println(data[i]);
         }
         return Vectors.dense(data);
     }
@@ -74,25 +73,22 @@ public static void main(String[] args) throws IOException {
         Files.lines(Paths.get(filename))
                 .map(str -> strToVector(str))
                 .forEach(e -> result.add(e));
-        //System.out.println(result);
         return result;
     }
 
     //receives in input a set of points S and returns the max distance between two points in S
-    private static void exactMPS(ArrayList<Vector> inputPoints) {
+    private static double exactMPS(ArrayList<Vector> inputPoints) {
         //Starting time
         long startTime = System.currentTimeMillis();
 
         //Setting variables
         double distance = 0;
         double cal;
-        long time;
         //Uses this to make a sublist of inputPoints
         int size = inputPoints.size();
 
         //Uses two for-loops to iterate through two vectors
-        //The first vector with all the elements from inputPoints
-        //The second vector with all the elements from element 1
+        //to be able to compare all the elements with each other
         for(Vector vector : inputPoints){
             for(Vector vector2 : inputPoints.subList(1, size)){
                 //Uses the formula for calculating distance. - sqrt((x1-x0)^2 + (y1-y0)^2)
@@ -106,12 +102,13 @@ public static void main(String[] args) throws IOException {
         //Ending time
         long endTime = System.currentTimeMillis();
 
-        time = (endTime - startTime);
-
-
         System.out.println("EXACT ALGORITHM");
         System.out.println("Max distance = " + distance);
-        System.out.println("Running time = " + time + " milliseconds" + "\n");
+        System.out.println("Running time = " + (endTime - startTime) + " milliseconds" + "\n");
+
+        //Added a return statement to be able to get the variable for the kCenterMPD
+        return distance;
+
     }
 
     private static void twoApproxMPD(ArrayList<Vector> inputPoints, int K) {
@@ -142,7 +139,7 @@ public static void main(String[] args) throws IOException {
         //Creating a loop to iterate through inputPoints to collect K random points
         for(int i = 0; i < K; i++){
             //Setting a variable for random generator, so I can remove the exact element from inputPoints as well
-            //How to change the boundary since the size is changing every time
+            //Have to change the boundary since the size is changing every time
             int r = random.nextInt(inputPoints.size());
             //Uses the size of inputPoints as the boundary,
             //or the random seed can get bigger than the size of inputPoints
@@ -150,10 +147,7 @@ public static void main(String[] args) throws IOException {
 
             //Removing the K elements from inputPoints
             inputPoints.remove(r);
-
-            //System.out.println(K_inputPoints);
         }
-        //System.out.println(inputPoints.size());
 
         //Calculate the maximum distance from S'
         for (Vector vectorX : K_inputPoints){
@@ -169,12 +163,16 @@ public static void main(String[] args) throws IOException {
             for (Vector vectorY1 : inputPoints.subList(1,inputPoints.size())){
                 cal = Math.sqrt((Math.pow(vectorY1.apply(0)-vectorY.apply(0), 2) +
                         Math.pow(vectorY1.apply(1)-vectorY.apply(1), 2)));
+                //Comparing the max distance from S' as well
                 if (cal >= distance) distance = cal;
             }
         }
 
         //Ending time
         long endTime = System.currentTimeMillis();
+
+        //Have to add the elements removed from inputPoints so the next method have all the elements
+        inputPoints.addAll(K_inputPoints);
 
         System.out.println("2-APPROXIMATION ALGORITHM");
         System.out.println("k = " + K);
@@ -183,16 +181,18 @@ public static void main(String[] args) throws IOException {
         //If we have a high K-value we can se that this method can be faster than the previous one.
     }
 
-    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K){
+    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K, long time){
         //Starting time
         long startTime = System.currentTimeMillis();
 
         //Creating variables
-        double distance = 0;
+        double distance;
         double maxDistance = 0;
         int size = inputPoints.size();
         ArrayList<Vector> centers = new ArrayList<>();
         ArrayList<Vector> maxPoint = new ArrayList<>();
+
+        //System.out.println(size);
 
         //Checking if integer k is not larger or equal than the size of inputPoints
         //and gives information about the size so it is easier to choose another K
@@ -202,6 +202,7 @@ public static void main(String[] args) throws IOException {
 
         //loop to find the first maxPoint by computing the max distance from the start point
         for (int i = 1; i < inputPoints.size(); i++){
+            //Uses the first element from inputPoints as a starting point
             double cal = Vectors.sqdist(inputPoints.get(0), inputPoints.get(i));
 
             if(cal > maxDistance) {
@@ -216,7 +217,7 @@ public static void main(String[] args) throws IOException {
         //Removing the maxPoint from inputPoints
         inputPoints.remove(centers.get(0));
 
-        //
+
         for(int j = 0; j < K; j++) {
             //Setting distance at 0, adding farthest point to centers and removing the same point from inputPoints
             maxDistance = 0;
@@ -238,16 +239,17 @@ public static void main(String[] args) throws IOException {
 
         //Will be K+1 points so we have to remove the first point
         centers.remove(0);
-        System.out.println(centers);
+        //System.out.println(centers);
 
-
+        //Getting the distance for the centers
+        distance = exactMPS(centers);
 
         //Ending time
         long endTime = System.currentTimeMillis();
 
         System.out.println("k-CENTER-BASED ALGORITHM");
         System.out.println("k = " + K);
-        System.out.println("Max distance = ");
-        System.out.println("Running time = " + (endTime - startTime) + "milliseconds");
+        System.out.println("Max distance = " + distance);
+        System.out.println("Running time = " + (time + (endTime - startTime)) + "milliseconds");
     }
 }
