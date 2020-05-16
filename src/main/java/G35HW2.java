@@ -115,8 +115,8 @@ public static void main(String[] args) throws IOException {
         //Starting time
         long startTime = System.currentTimeMillis();
 
-        //Setting SEED
-        long seed = 1219042; //Student-ID
+        //Setting SEED - 1219042
+        long seed = 1227743; //Student-ID
 
         //Creating new variables
         double distance = 0;
