@@ -7,9 +7,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Random;
 
 public class G35HW2 {
+    //Setting variables
+    double distance = 0;
+    long time = 0;
 
 
 public static void main(String[] args) throws IOException {
@@ -81,6 +86,7 @@ public static void main(String[] args) throws IOException {
         //Setting variables
         double distance = 0;
         double cal;
+        long time;
         //Uses this to make a sublist of inputPoints
         int size = inputPoints.size();
 
@@ -97,13 +103,15 @@ public static void main(String[] args) throws IOException {
 
             }
         }
-
         //Ending time
         long endTime = System.currentTimeMillis();
 
+        time = (endTime - startTime);
+
+
         System.out.println("EXACT ALGORITHM");
         System.out.println("Max distance = " + distance);
-        System.out.println("Running time = " + (endTime - startTime) + " milliseconds" + "\n");
+        System.out.println("Running time = " + time + " milliseconds" + "\n");
     }
 
     private static void twoApproxMPD(ArrayList<Vector> inputPoints, int K) {
@@ -171,7 +179,75 @@ public static void main(String[] args) throws IOException {
         System.out.println("2-APPROXIMATION ALGORITHM");
         System.out.println("k = " + K);
         System.out.println("Max distance = " + distance);
+        System.out.println("Running time = " + (endTime - startTime) + "milliseconds" + "\n");
+        //If we have a high K-value we can se that this method can be faster than the previous one.
+    }
+
+    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K){
+        //Starting time
+        long startTime = System.currentTimeMillis();
+
+        //Creating variables
+        double distance = 0;
+        double maxDistance = 0;
+        int size = inputPoints.size();
+        ArrayList<Vector> centers = new ArrayList<>();
+        ArrayList<Vector> maxPoint = new ArrayList<>();
+
+        //Checking if integer k is not larger or equal than the size of inputPoints
+        //and gives information about the size so it is easier to choose another K
+        if(K >= inputPoints.size()) throw new IllegalArgumentException(
+                "Integer k is too large or equal to the size of inputPoints. " +
+                        "It must be smaller than, " + size);
+
+        //loop to find the first maxPoint by computing the max distance from the start point
+        for (int i = 1; i < inputPoints.size(); i++){
+            double cal = Vectors.sqdist(inputPoints.get(0), inputPoints.get(i));
+
+            if(cal > maxDistance) {
+                maxDistance = cal;
+                //The array will contain all the "max" points, but the last index will contain the absolute max.
+                maxPoint.add(inputPoints.get(i));
+            }
+        }
+
+        //Adding the first maxPoint to centers
+        centers.add(maxPoint.get(maxPoint.size()-1));
+        //Removing the maxPoint from inputPoints
+        inputPoints.remove(centers.get(0));
+
+        //
+        for(int j = 0; j < K; j++) {
+            //Setting distance at 0, adding farthest point to centers and removing the same point from inputPoints
+            maxDistance = 0;
+            centers.add(maxPoint.get(maxPoint.size()-1));
+            inputPoints.removeAll(centers);
+
+            //Removing all the maxPoints from the previous loop
+            maxPoint.removeAll(maxPoint);
+
+            for (int i = 0; i < inputPoints.size(); i++) {
+                double cal = Vectors.sqdist(centers.get(j), inputPoints.get(i));
+
+                if(cal > maxDistance){
+                    maxDistance = cal;
+                    maxPoint.add(inputPoints.get(i));
+                }
+            }
+        }
+
+        //Will be K+1 points so we have to remove the first point
+        centers.remove(0);
+        System.out.println(centers);
+
+
+
+        //Ending time
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("k-CENTER-BASED ALGORITHM");
+        System.out.println("k = " + K);
+        System.out.println("Max distance = ");
         System.out.println("Running time = " + (endTime - startTime) + "milliseconds");
-        //If we have a high K-value we can se that this method is faster than the previous one.
     }
 }
