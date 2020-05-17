@@ -21,7 +21,6 @@ public static void main(String[] args) throws IOException {
     }
 
     //Setting variables
-    long time;
     String filename = args[0];
     ArrayList<Vector> inputPoints;
     inputPoints = readVectorsSeq(filename);
@@ -32,12 +31,7 @@ public static void main(String[] args) throws IOException {
     sc.setLogLevel("WARN");
 
     //Runs the exactMPS method with the inputPoints as input
-    //Calculating the time for the method, so we can use this variable in kCenterMPD
-    long timeStart = System.currentTimeMillis();
     exactMPS(inputPoints);
-    long endTime = System.currentTimeMillis();
-
-    time = endTime - timeStart;
 
     // Gets number of partitions from the input
     int K = Integer.parseInt(args[1]);
@@ -46,8 +40,7 @@ public static void main(String[] args) throws IOException {
     twoApproxMPD(inputPoints, K);
 
     //Runs the kCenterMPD method with the following inputs,
-    //added one more parameter to get the time from exactMPD
-    kCenterMPD(inputPoints, K, time);
+    kCenterMPD(inputPoints, K);
 
 }
 
@@ -181,7 +174,7 @@ public static void main(String[] args) throws IOException {
         //If we have a high K-value we can se that this method can be faster than the previous one.
     }
 
-    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K, long time){
+    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K){
         //Starting time
         long startTime = System.currentTimeMillis();
 
@@ -250,6 +243,6 @@ public static void main(String[] args) throws IOException {
         System.out.println("k-CENTER-BASED ALGORITHM");
         System.out.println("k = " + K);
         System.out.println("Max distance = " + distance);
-        System.out.println("Running time = " + (time + (endTime - startTime)) + "milliseconds");
+        System.out.println("Running time = " + ((endTime - startTime)) + "milliseconds");
     }
 }
