@@ -6,8 +6,8 @@ import org.apache.spark.mllib.linalg.Vectors;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.IntStream;
 
 public class G35HW2 {
 
@@ -174,66 +174,47 @@ public static void main(String[] args) throws IOException {
         //If we have a high K-value we can se that this method can be faster than the previous one.
     }
 
-    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K){
+    private static void kCenterMPD(ArrayList<Vector> inputPoints, int K) {
         //Starting time
         long startTime = System.currentTimeMillis();
 
-        //Creating variables
+        //Setting variables
+        ArrayList<Vector> centers = new ArrayList<>(K);
+        int n = inputPoints.size();
         double distance;
-        double maxDistance = 0;
-        int size = inputPoints.size();
-        ArrayList<Vector> centers = new ArrayList<>();
-        ArrayList<Vector> maxPoint = new ArrayList<>();
-
-        //System.out.println(size);
+        ArrayList<Double> centerMinDist = new ArrayList<>(n); //track of the closest distances from center
 
         //Checking if integer k is not larger or equal than the size of inputPoints
         //and gives information about the size so it is easier to choose another K
         if(K >= inputPoints.size()) throw new IllegalArgumentException(
                 "Integer k is too large or equal to the size of inputPoints. " +
-                        "It must be smaller than, " + size);
+                        "It must be smaller than, " + inputPoints.size());
 
-        //loop to find the first maxPoint by computing the max distance from the start point
-        for (int i = 1; i < inputPoints.size(); i++){
-            //Uses the first element from inputPoints as a starting point
-            double cal = Vectors.sqdist(inputPoints.get(0), inputPoints.get(i));
+        //Generating a random number p to choose a random point from input
+        Random random = new Random();
+        int p = random.nextInt(inputPoints.size());
+        centers.add(inputPoints.get(p)); //First center chosen
+        System.out.println(centers.get(0));
 
-            if(cal > maxDistance) {
-                maxDistance = cal;
-                //The array will contain all the "max" points, but the last index will contain the absolute max.
-                maxPoint.add(inputPoints.get(i));
-            }
+        //Saves the distance of each point from the first random selected point p.
+        //Maybe this is not necessary?
+        for(int i = 0; i < n; i++){
+            centerMinDist.add(i, euclideanDist(centers.get(0), inputPoints.get(i)));
         }
 
-        //Adding the first maxPoint to centers
-        centers.add(maxPoint.get(maxPoint.size()-1));
-        //Removing the maxPoint from inputPoints
-        inputPoints.remove(centers.get(0));
-
-
-        for(int j = 0; j < K; j++) {
-            //Setting distance at 0, adding farthest point to centers and removing the same point from inputPoints
-            maxDistance = 0;
-            centers.add(maxPoint.get(maxPoint.size()-1));
-            inputPoints.removeAll(centers);
-
-            //Removing all the maxPoints from the previous loop
-            maxPoint.removeAll(maxPoint);
-
-            for (int i = 0; i < inputPoints.size(); i++) {
-                double cal = Vectors.sqdist(centers.get(j), inputPoints.get(i));
-
-                if(cal > maxDistance){
-                    maxDistance = cal;
-                    maxPoint.add(inputPoints.get(i));
-                }
+        //Starting the cycle
+        for(int h = 1; h < K; h++){
+            //Selecting as center the point that is the farthest from an already selected center
+            int maxDistIndex = IntStream.range(0, centerMinDist.size()).boxed()
+                    .max(Comparator.comparing(centerMinDist::get)).orElse(-1);
+            centers.add(inputPoints.get(maxDistIndex));
+            //Updating min distance
+            for(int j = 0; j < n; j++){
+                double currentDist = euclideanDist(inputPoints.get(j), centers.get(h));
+                centerMinDist.set(j, Math.min(centerMinDist.get(j), currentDist));
             }
+
         }
-
-        //Will be K+1 points so we have to remove the first point
-        centers.remove(0);
-        //System.out.println(centers);
-
         //Getting the distance for the centers
         distance = exactMPS(centers);
 
@@ -244,5 +225,14 @@ public static void main(String[] args) throws IOException {
         System.out.println("k = " + K);
         System.out.println("Max distance = " + distance);
         System.out.println("Running time = " + ((endTime - startTime)) + "milliseconds");
+
+
     }
+
+    //Method for calculating the Euclidean Distance
+    // --------------------------------------------------------------------------------------
+    public static double euclideanDist(Vector a, Vector b){
+        return Math.sqrt(Vectors.sqdist(a, b));
+    }
+
 }
