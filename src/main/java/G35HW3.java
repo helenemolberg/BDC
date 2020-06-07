@@ -3,7 +3,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
-import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -51,7 +50,6 @@ public class G35HW3 {
         double averageDist = measure(pointsSet);
         System.out.println("\nAverage distance = " + averageDist);
 
-
     }
 
     public static ArrayList<Vector> runMapReduce(JavaRDD<Vector> pointsRDD, int k, int L){
@@ -89,10 +87,10 @@ public class G35HW3 {
 
         ArrayList<Vector> coreset = new ArrayList<>(k*L);
         coreset.addAll(pointS.collect());
-        System.out.println(coreset);
+        //System.out.println(coreset);
 
         ArrayList<Vector> pointsSet = runSequential(coreset, k);
-        System.out.println(pointsSet);
+        //System.out.println(pointsSet);
 
         long stop2 = System.currentTimeMillis();
         System.out.println("Runtime of Round 2 = " + (stop2-start2) + " ms");
@@ -161,7 +159,16 @@ public class G35HW3 {
     //Determines the average distance among the solution points
     //---------------------------------------------------------------------------------------
     public static double measure(ArrayList<Vector> pointsSet){
-        double averageDist = 0;
+        double averageDist;
+        double sumDist = 0;
+
+        for(int i = 0; i < pointsSet.size(); i++){
+            for(int j = 1; j < pointsSet.size(); j++){
+                sumDist += euclideanDist(pointsSet.get(i), pointsSet.get(j));
+            }
+        }
+
+        averageDist = sumDist/pointsSet.size();
 
         return averageDist;
     }
