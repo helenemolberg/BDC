@@ -12,10 +12,9 @@ public class G35HW3 {
     public static void main(String[] args) {
         //Checking number of CMD parameters
         //Gonna get filename, k and L
-        /*
-        if(args.length == 0){
+        if(args.length != 3){
             throw new IllegalArgumentException("NEED: filename k L");
-        }*/
+        }
 
         //Gets the filename
         String filename = args[0];
@@ -79,6 +78,7 @@ public class G35HW3 {
         but an ArrayList<Vector> (in Java) or a list of tuple (in Python)
          */
 
+        //Extracts the partitions from Round 1
         ArrayList<Vector> coreset = new ArrayList<>(k*L);
         coreset.addAll(pointsVector.collect());
         //Ending time from Round 1
@@ -99,11 +99,8 @@ public class G35HW3 {
         return pointsSet;
     }
 
-    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    // METHOD runSequential
     // Sequential 2-approximation based on matching
-    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
+    //---------------------------------------------------------------------------------------
     public static ArrayList<Vector> runSequential(final ArrayList<Vector> points, int k) {
 
         final int n = points.size();
