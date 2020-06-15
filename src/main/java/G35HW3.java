@@ -12,9 +12,10 @@ public class G35HW3 {
     public static void main(String[] args) {
         //Checking number of CMD parameters
         //Gonna get filename, k and L
+        /*
         if(args.length == 0){
             throw new IllegalArgumentException("NEED: filename k L");
-        }
+        }*/
 
         //Gets the filename
         String filename = args[0];
@@ -61,7 +62,7 @@ public class G35HW3 {
         //Starting time for Round 1
         long start1 = System.currentTimeMillis();
 
-        JavaRDD<Vector> pointS = pointsRDD.mapPartitions(x ->{
+        JavaRDD<Vector> pointsVector = pointsRDD.mapPartitions(x ->{
            ArrayList<Vector> points = new ArrayList<>();
            while(x.hasNext()){
                points.add(x.next());
@@ -72,22 +73,22 @@ public class G35HW3 {
            return centers.iterator();
         });
 
-        //Ending time from Round 1
-        long stop1 = System.currentTimeMillis();
-        System.out.println("\nRuntime of Round 1 = " + (stop1-start1) + " ms");
-
         //------------------------- ROUND 2 ---------------------------------------------------------------
         /*collects the L*k points extracted in Round 1 from the partitions into a set called coreset and returns,
         as output, the k points computed by runSequential(coreset,k). Note that coreset is not an RDD
         but an ArrayList<Vector> (in Java) or a list of tuple (in Python)
          */
 
+        ArrayList<Vector> coreset = new ArrayList<>(k*L);
+        coreset.addAll(pointsVector.collect());
+        //Ending time from Round 1
+        long stop1 = System.currentTimeMillis();
+        System.out.println("\nRuntime of Round 1 = " + (stop1-start1) + " ms");
+
+        //System.out.println(coreset);
+
         //Starting time for Round 2
         long start2 = System.currentTimeMillis();
-
-        ArrayList<Vector> coreset = new ArrayList<>(k*L);
-        coreset.addAll(pointS.collect());
-        //System.out.println(coreset);
 
         ArrayList<Vector> pointsSet = runSequential(coreset, k);
         //System.out.println(pointsSet);
